@@ -52,9 +52,18 @@ export default class ObsidianLocaltablePlugin extends Plugin {
 		const name = this.settings.apiKeySecretName;
 		if (name) {
 			try {
-				const ss = (this.app as any).secretStorage;
-				if (ss && typeof ss.get === "function") {
-					const secret = await ss.get(name);
+				const secretStorage = (this.app as App & {
+					secretStorage?: {
+						getSecret?: (id: string) => Promise<string | null>;
+						get?: (id: string) => Promise<string | null>;
+					};
+				}).secretStorage;
+				if (secretStorage?.getSecret) {
+					const secret = await secretStorage.getSecret(name);
+					if (secret) return secret;
+				}
+				if (secretStorage?.get) {
+					const secret = await secretStorage.get(name);
 					if (secret) return secret;
 				}
 			} catch {

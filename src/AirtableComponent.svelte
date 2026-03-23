@@ -153,6 +153,10 @@ onDestroy(() => {
                 <div class="record-details">
                     <PropertiesList title="Properties" fields={recordProperties} expanded={true} />
                 </div>
+            {:else if storeState?.error}
+                <div class="empty-container">
+                    <EmptyState icon="alert-triangle" title="Failed to load record" description={storeState.error} />
+                </div>
             {:else}
                 <div class="empty-container">
                     <EmptyState icon="search" title="Loading record" description="Fetching data..." />
