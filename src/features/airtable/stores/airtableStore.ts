@@ -484,6 +484,87 @@ const createAirtableStore = () => {
 			});
 		},
 
+		resetRecordPresentation: () => {
+			update((state) => ({
+				...state,
+				allRecords: null,
+				searchQuery: "",
+				sortDirection: "asc",
+				selectedRecord: null,
+				tableData: state.tableData
+					? {
+						...state.tableData,
+						records: undefined,
+					}
+					: state.tableData,
+			}));
+		},
+
+		setRecordSearchQuery: async (query: string) => {
+			const normalizedQuery = query.trim();
+			const state = get(store);
+
+			if (!state.tableData) {
+				update((current) => ({ ...current, searchQuery: normalizedQuery }));
+				return;
+			}
+
+			const baseRecords = state.allRecords ?? state.tableData.records ?? [];
+			update((current) => ({
+				...current,
+				searchQuery: normalizedQuery,
+				loading: normalizedQuery.length > 0,
+			}));
+
+			let recordsForPresentation = baseRecords;
+			if (normalizedQuery.length > 0 && service) {
+				const daemonResults = await service.searchRecords(state.tableData.id, normalizedQuery);
+				if (daemonResults !== null) {
+					const allowedIds = new Set(baseRecords.map((record) => record.id));
+					recordsForPresentation = daemonResults.filter((record) => allowedIds.has(record.id));
+				}
+			}
+
+			update((current) => {
+				if (!current.tableData) {
+					return { ...current, loading: false };
+				}
+
+				const filtered = normalizedQuery.length > 0 && recordsForPresentation === baseRecords
+					? filterRecordsLocally(baseRecords, normalizedQuery)
+					: recordsForPresentation;
+
+				return {
+					...current,
+					loading: false,
+					tableData: {
+						...current.tableData,
+						records: sortRecords(filtered, current.tableData, current.sortDirection),
+					},
+				};
+			});
+		},
+
+		toggleRecordSortDirection: () => {
+			update((state) => {
+				if (!state.tableData) {
+					return state;
+				}
+
+				const sortDirection: RecordSortDirection = state.sortDirection === "asc" ? "desc" : "asc";
+				const sourceRecords = state.tableData.records ?? state.allRecords ?? [];
+
+				return {
+					...state,
+					sortDirection,
+					tableData: {
+						...state.tableData,
+						records: sortRecords(sourceRecords, state.tableData, sortDirection),
+					},
+				};
+			});
+		},
+
 		selectRecord: (record: AirtableRecord) => update((state) => ({ ...state, selectedRecord: record })),
 
         closeRecordView: () => update(s => ({ ...s, selectedRecord: null })),

@@ -1,7 +1,7 @@
 {
 	"id": "localtable",
 	"name": "localtable",
-	"version": "1.1.0",
+	"version": "1.1.1",
 	"minAppVersion": "1.11.5",
 	"description": "Browse linked records from notes and sync note links with Airtable integration.",
 	"author": "Oleksii Luchnikov",
