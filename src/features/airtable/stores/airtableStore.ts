@@ -16,6 +16,7 @@ interface PluginSettings {
 	obsidianLinkFieldName: string;
 	templatePath: string;
 	newNoteLocation: string;
+	autoCreateLinkField: boolean;
 }
 
 interface AirtableMetadata {
@@ -193,7 +194,8 @@ const createAirtableStore = () => {
                 pluginSettings.apiKey,
                 pluginSettings.baseId,
                 pluginSettings.obsidianLinkFieldName,
-                state.tableData || undefined // 🟢 Pass tableData for auto-create
+                state.tableData || undefined,
+                pluginSettings.autoCreateLinkField,
             );
 
             // Refresh table schema and records to show new field
@@ -239,6 +241,7 @@ const createAirtableStore = () => {
 				pluginSettings.obsidianLinkFieldName,
 				pluginSettings.apiKey,
 				pluginSettings.baseId,
+				pluginSettings.autoCreateLinkField,
 				() => undefined
 			);
 
@@ -414,6 +417,27 @@ const createAirtableStore = () => {
 			} catch (error: unknown) {
 				new Notice(`Failed to create note for ${recordName}: ${getErrorMessage(error)}`);
 			}
+		},
+
+		ensureLinkField: async () => {
+			const state = get(store);
+			if (!linkSyncService || !pluginSettings || !state.tableData) {
+				new Notice("No table data loaded.");
+				return;
+			}
+
+			const ensured = await linkSyncService.ensureFieldExists(
+				state.tableData,
+				pluginSettings.obsidianLinkFieldName,
+				pluginSettings.apiKey,
+				pluginSettings.baseId,
+				true,
+			);
+
+			if (!ensured) return;
+			new Notice(`Link field "${pluginSettings.obsidianLinkFieldName}" is ready.`);
+			await airtableStore.loadTableInfo(true, state.tableData.id);
+			await airtableStore.fetchRecords(true);
 		},
 
         // H2: null ALL service references to prevent dangling async continuations

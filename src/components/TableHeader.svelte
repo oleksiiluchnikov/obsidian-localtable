@@ -114,6 +114,16 @@
 
 	<button
 		class="sync-all-btn"
+		onclick={() => airtableStore.ensureLinkField()}
+		disabled={loading}
+		title="Create or validate the Obsidian link field"
+	>
+		<Icon icon="wrench" />
+		Ensure Link Field
+	</button>
+
+	<button
+		class="sync-all-btn"
 		onclick={batchSyncLinks}
 		disabled={loading || !hasRecords}
 		title="Sync Obsidian links for all records with notes"

@@ -130,6 +130,17 @@ export default class ObsidianLocaltablePlugin extends Plugin {
 
 		this.addCommand({ id: "open-localtable", name: `Open ${PLUGIN_NAME}`, callback: () => this.activateView() });
 		this.addCommand({ id: "toggle-localtable", name: `Toggle ${PLUGIN_NAME}`, callback: () => this.toggleView() });
+		this.addCommand({
+			id: "ensure-link-field",
+			name: "Ensure link field",
+			checkCallback: (checking) => {
+				const hasTable = !!airtableStore.getCurrentAirtableMetadata() || !!this.app.workspace.getActiveFile();
+				if (!checking) {
+					void airtableStore.ensureLinkField();
+				}
+				return hasTable;
+			},
+		});
 
 		this.addCommand({
 			id: "open-in-airtable",
@@ -453,7 +464,7 @@ class LocaltableSettingTab extends PluginSettingTab {
 
 		new Setting(containerEl)
 			.setName("Auto-create link field")
-			.setDesc("Automatically create the Obsidian link field in Airtable if it doesn't exist")
+			.setDesc("Automatically create the Obsidian link field in Airtable if it doesn't exist. When disabled, use Ensure Link Field manually.")
 			.addToggle(toggle => toggle
 				.setValue(this.plugin.settings.autoCreateLinkField)
 				.onChange(async (value) => {

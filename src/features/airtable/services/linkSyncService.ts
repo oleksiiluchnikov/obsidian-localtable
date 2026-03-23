@@ -170,7 +170,8 @@ export class LinkSyncService {
         apiKey: string,
         baseId: string,
         fieldName: string,
-        tableData?: TableData
+        tableData?: TableData,
+        autoCreateField: boolean = true,
     ): Promise<void> {
         const activeFile = this.app.workspace.getActiveFile();
         if (!activeFile) {
@@ -202,7 +203,7 @@ export class LinkSyncService {
                 fieldName,
                 apiKey,
                 baseId,
-                true
+                autoCreateField
             );
 
             if (!fieldExists) return;
@@ -225,6 +226,7 @@ export class LinkSyncService {
         fieldName: string,
         apiKey: string,
         baseId: string,
+        autoCreateField: boolean,
         onProgress?: (current: number, total: number) => void
     ): Promise<{ success: number; failed: number }> {
         if (recordFileMap.size === 0) {
@@ -237,7 +239,7 @@ export class LinkSyncService {
             fieldName,
             apiKey,
             baseId,
-            true
+            autoCreateField
         );
 
         if (!fieldExists) {
