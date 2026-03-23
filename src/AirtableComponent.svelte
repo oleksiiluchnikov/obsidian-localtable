@@ -80,6 +80,7 @@ async function loadForFile(file: TFile | null, type: DataType, gen: number) {
     const fm = app.metadataCache.getFileCache(file)?.frontmatter;
 
 	if (type === DataType.RECORD) {
+		airtableStore.resetRecordPresentation();
 		airtableStore.setActiveView(null);
 		const recordId = String(fm!.uuid);
 		let targetTableId: string | null = fm!.airtable_table_id ?? null;
@@ -99,12 +100,14 @@ async function loadForFile(file: TFile | null, type: DataType, gen: number) {
 		void airtableStore.resolveSelectedRecordLinks();
 
 	} else if (type === DataType.TABLE) {
+		airtableStore.resetRecordPresentation();
 		airtableStore.setActiveView(null);
         airtableStore.closeRecordView();
         await airtableStore.loadTableInfo(false, fm!.airtable_table_id);
         await airtableStore.fetchRecords(false);
 
     } else if (type === DataType.VIEW) {
+		airtableStore.resetRecordPresentation();
 		const targetTableId = fm?.airtable_table_id;
 		const targetViewId = fm?.airtable_view_id;
 

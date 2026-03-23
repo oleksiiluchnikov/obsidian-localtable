@@ -25,11 +25,16 @@ interface AirtableMetadata {
 	hasAirtableLink: true;
 }
 
+type RecordSortDirection = "asc" | "desc";
+
 export interface AirtableState {
     tableData: TableData | null;
     loading: boolean;
     error: string;
     activeViewId: string | null;
+    allRecords: AirtableRecord[] | null;
+    searchQuery: string;
+    sortDirection: RecordSortDirection;
     expandedSections: {
         fields: boolean;
         views: boolean;
@@ -46,6 +51,9 @@ const initialState: AirtableState = {
     loading: false,
     error: "",
     activeViewId: null,
+    allRecords: null,
+    searchQuery: "",
+    sortDirection: "asc",
     expandedSections: {
         fields: false,
         views: false,
@@ -622,4 +630,54 @@ function mergeResolvedLinkedRecords(
 	}
 
 	return merged;
+}
+
+function presentRecords(
+	records: AirtableRecord[],
+	tableData: TableData,
+	searchQuery: string,
+	sortDirection: RecordSortDirection,
+): AirtableRecord[] {
+	const filtered = searchQuery.trim() ? filterRecordsLocally(records, searchQuery) : records;
+	return sortRecords(filtered, tableData, sortDirection);
+}
+
+function filterRecordsLocally(records: AirtableRecord[], query: string): AirtableRecord[] {
+	const normalizedQuery = query.trim().toLowerCase();
+	if (!normalizedQuery) return records;
+
+	return records.filter((record) =>
+		Object.values(record.fields).some((value) => stringifySearchValue(value).includes(normalizedQuery)),
+	);
+}
+
+function sortRecords(
+	records: AirtableRecord[],
+	tableData: TableData,
+	direction: RecordSortDirection,
+): AirtableRecord[] {
+	const primaryFieldName = tableData.fields.find((field) => field.id === tableData.primaryFieldId)?.name;
+	const multiplier = direction === "asc" ? 1 : -1;
+
+	return [...records].sort((left, right) => {
+		const leftValue = stringifySearchValue(primaryFieldName ? left.fields[primaryFieldName] : left.id);
+		const rightValue = stringifySearchValue(primaryFieldName ? right.fields[primaryFieldName] : right.id);
+		return leftValue.localeCompare(rightValue) * multiplier;
+	});
+}
+
+function stringifySearchValue(value: unknown): string {
+	if (Array.isArray(value)) {
+		return value.map((item) => stringifySearchValue(item)).join(" ").toLowerCase();
+	}
+	if (typeof value === "string") {
+		return value.toLowerCase();
+	}
+	if (typeof value === "number" || typeof value === "boolean") {
+		return String(value).toLowerCase();
+	}
+	if (typeof value === "object" && value !== null) {
+		return Object.values(value).map((item) => stringifySearchValue(item)).join(" ").toLowerCase();
+	}
+	return "";
 }

@@ -32,6 +32,8 @@ let lastRefresh     = $derived(storeState?.lastRefresh    ?? null);
 let isCached        = $derived(storeState?.isCached       ?? false);
 let selectedRecord  = $derived(storeState?.selectedRecord ?? null);
 let activeViewId    = $derived(storeState?.activeViewId   ?? null);
+let searchQuery     = $derived(storeState?.searchQuery    ?? "");
+let sortDirection   = $derived(storeState?.sortDirection  ?? "asc");
 let activeView      = $derived(activeViewId && tableData ? tableData.views.find((view) => view.id === activeViewId) ?? null : null);
 
 function toggleSection(section: "fields" | "views" | "details" | "records") {
@@ -67,7 +69,7 @@ function closeRecordView() {
                 onAction={() => airtableStore.loadTableInfo()}
             />
         {:else if tableData}
-            <TableHeader data={tableData} {loading} {isCached} {mode} activeViewName={activeView?.name ?? null} />
+            <TableHeader data={tableData} {loading} {isCached} {mode} activeViewName={activeView?.name ?? null} {searchQuery} {sortDirection} />
 
             <FieldsList
                 fields={tableData.fields}

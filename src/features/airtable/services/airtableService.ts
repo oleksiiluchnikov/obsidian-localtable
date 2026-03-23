@@ -133,6 +133,23 @@ export class AirtableService {
 		return cacheClient.getRecord(baseId, tableId, recordId, apiKey);
 	}
 
+	async searchRecords(tableIdOrName: string, query: string): Promise<AirtableRecord[] | null> {
+		const normalizedQuery = query.trim();
+		if (!normalizedQuery) return [];
+
+		const daemonAvailable = await cacheClient.isDaemonAvailable();
+		if (!daemonAvailable) return null;
+
+		try {
+			const { apiKey, baseId } = this.settings;
+			const result = await cacheClient.searchRecords(baseId, tableIdOrName, normalizedQuery);
+			void apiKey;
+			return result.records;
+		} catch {
+			return null;
+		}
+	}
+
 	async batchResolveLinkedRecords(records: AirtableRecord[], tableData: TableData): Promise<Map<string, Map<string, LinkedRecordInfo>>> {
 		const recordsByTable = new Map<string, Set<string>>();
 
