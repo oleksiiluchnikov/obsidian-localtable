@@ -6,9 +6,11 @@ import FieldsList from "../../components/FieldsList.svelte";
 import ViewsList from "../../components/ViewsList.svelte";
 import DetailsSection from "../../components/DetailsSection.svelte";
 import RecordsList from "../../components/RecordsList.svelte";
+import RecordModal from "../../components/RecordModal.svelte";
 import EmptyState from "../../ui/EmptyState.svelte";
 
 import { airtableStore, type AirtableState } from ".";
+import type { AirtableRecord } from "../../airtable";
 
 // Props flow down from AirtableComponent which owns the single store subscription.
 // No $derived($airtableStore.*) here — that pattern caused effect_update_depth_exceeded.
@@ -22,13 +24,18 @@ let expandedSections = $derived(storeState?.expandedSections ?? {
 });
 let lastRefresh     = $derived(storeState?.lastRefresh    ?? null);
 let isCached        = $derived(storeState?.isCached       ?? false);
+let selectedRecord  = $derived(storeState?.selectedRecord ?? null);
 
 function toggleSection(section: "fields" | "views" | "details" | "records") {
     airtableStore.toggleSection(section);
 }
 
-function handleRecordClick(record: any) {
+function handleRecordClick(record: AirtableRecord) {
     airtableStore.selectRecord(record);
+}
+
+function closeRecordView() {
+    airtableStore.closeRecordView();
 }
 </script>
 
@@ -91,9 +98,25 @@ function handleRecordClick(record: any) {
             />
         {/if}
     </div>
+
+    {#if tableData && selectedRecord}
+        <RecordModal
+            record={selectedRecord}
+            {tableData}
+            onClose={closeRecordView}
+        />
+    {/if}
 </div>
 
 <style>
+.airtable-table {
+    position: relative;
+    display: flex;
+    flex: 1;
+    flex-direction: column;
+    min-height: 0;
+}
+
 .view-content {
     flex: 1;
     overflow-y: auto;

@@ -8,7 +8,7 @@
 		tableData,
 		onClose,
 	}: {
-		record: { id: string; fields: Record<string, any>; createdTime?: string };
+		record: { id: string; fields: Record<string, unknown>; createdTime?: string };
 		tableData: TableData;
 		onClose: () => void;
 	} = $props();
@@ -25,6 +25,13 @@
 		}
 	}
 
+	function handleBackdropKeydown(event: KeyboardEvent) {
+		if ((event.key === "Enter" || event.key === " ") && event.target === event.currentTarget) {
+			event.preventDefault();
+			handleClose();
+		}
+	}
+
 	function handleEscape(event: KeyboardEvent) {
 		if (event.key === "Escape") {
 			handleClose();
@@ -34,11 +41,18 @@
 
 <svelte:window onkeydown={handleEscape} />
 
-<div class="modal-backdrop" onclick={handleBackdropClick}>
+<div
+	class="modal-backdrop"
+	role="button"
+	tabindex="0"
+	aria-label="Close record details"
+	onclick={handleBackdropClick}
+	onkeydown={handleBackdropKeydown}
+>
 	<div class="modal-container">
 		<div class="modal-header">
 			<h3 class="modal-title">Record Details</h3>
-			<button class="modal-close" onclick={handleClose} title="Close (Esc)">
+			<button class="modal-close" type="button" onclick={handleClose} aria-label="Close record details" title="Close (Esc)">
 				<Icon icon="x" className="close-icon" />
 			</button>
 		</div>
@@ -51,25 +65,26 @@
 </div>
 
 <style>
-	/* .modal-backdrop { */
-	/* 	position: fixed; */
-	/* 	top: 0; */
-	/* 	left: 0; */
-	/* 	right: 0; */
-	/* 	bottom: 0; */
-	/* 	background-color: rgba(0, 0, 0, 0.5); */
-	/* 	display: flex; */
-	/* 	align-items: center; */
-	/* 	justify-content: center; */
-	/* 	z-index: 1000; */
-	/* 	padding: var(--size-4-4); */
-	/* } */
+	.modal-backdrop {
+		position: absolute;
+		inset: 0;
+		z-index: 20;
+		display: flex;
+		align-items: stretch;
+		justify-content: center;
+		padding: var(--size-4-4);
+		background-color: color-mix(in srgb, var(--background-primary) 72%, transparent);
+		backdrop-filter: blur(2px);
+	}
 
 	.modal-container {
 		background-color: var(--background-primary);
+		border: 1px solid var(--background-modifier-border);
 		border-radius: var(--radius-l);
 		box-shadow: var(--shadow-l);
 		width: 100%;
+		max-width: 720px;
+		max-height: 100%;
 		display: flex;
 		flex-direction: column;
 		overflow: hidden;
@@ -92,9 +107,11 @@
 	}
 
 	.modal-close {
+		min-width: 44px;
+		min-height: 44px;
 		padding: var(--size-2-2);
 		background: transparent;
-		border: none;
+		border: 1px solid transparent;
 		cursor: pointer;
 		border-radius: var(--radius-s);
 		display: flex;
@@ -105,6 +122,11 @@
 
 	.modal-close:hover {
 		background-color: var(--background-modifier-hover);
+	}
+
+	.modal-close:focus-visible {
+		outline: 2px solid var(--interactive-accent);
+		outline-offset: 2px;
 	}
 
 	:global(.close-icon) {

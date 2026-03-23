@@ -2,6 +2,7 @@
 	import CollapsibleSection from "./CollapsibleSection.svelte";
 	import RecordItem from "./RecordItem.svelte";
 	import { FieldResolver, type TableData } from "../features/airtable";
+	import type { AirtableRecord } from "../airtable";
 
 	let {
 		records,
@@ -10,11 +11,11 @@
 		onToggle,
 		onRecordClick = null,
 	}: {
-		records: Array<any>;
+		records: AirtableRecord[];
 		tableData: TableData;
 		expanded?: boolean;
 		onToggle: () => void;
-		onRecordClick?: ((record: any) => void) | null;
+		onRecordClick?: ((record: AirtableRecord) => void) | null;
 	} = $props();
 
 	// Reactive resolver creation

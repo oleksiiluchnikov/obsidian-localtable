@@ -38,6 +38,13 @@
 		}
 	}
 
+	function handleKeydown(event: KeyboardEvent) {
+		if (event.key === "Enter" || event.key === " ") {
+			event.preventDefault();
+			handleClick();
+		}
+	}
+
 	function handleCreateNote(e: MouseEvent) {
 		e.stopPropagation();
 		airtableStore.createNote(record);
@@ -46,7 +53,7 @@
 </script>
 
 {#if onClick}
-	<div class="record record--interactive" role="button" tabindex="0" onclick={handleClick} onkeydown={(e) => e.key === 'Enter' && handleClick()}>
+	<div class="record record--interactive" role="button" tabindex="0" onclick={handleClick} onkeydown={handleKeydown}>
 			<div class="record-title">
 				<span class="title-text">
 					{primaryField?.resolved.displayValue || record.id}
