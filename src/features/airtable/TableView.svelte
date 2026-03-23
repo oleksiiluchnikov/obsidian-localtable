@@ -14,7 +14,13 @@ import type { AirtableRecord } from "../../airtable";
 
 // Props flow down from AirtableComponent which owns the single store subscription.
 // No $derived($airtableStore.*) here — that pattern caused effect_update_depth_exceeded.
-let { storeState }: { storeState: AirtableState | null } = $props();
+let {
+    storeState,
+    mode = "table",
+}: {
+    storeState: AirtableState | null;
+    mode?: "table" | "view";
+} = $props();
 
 let tableData       = $derived(storeState?.tableData      ?? null);
 let loading         = $derived(storeState?.loading        ?? false);
@@ -25,6 +31,8 @@ let expandedSections = $derived(storeState?.expandedSections ?? {
 let lastRefresh     = $derived(storeState?.lastRefresh    ?? null);
 let isCached        = $derived(storeState?.isCached       ?? false);
 let selectedRecord  = $derived(storeState?.selectedRecord ?? null);
+let activeViewId    = $derived(storeState?.activeViewId   ?? null);
+let activeView      = $derived(activeViewId && tableData ? tableData.views.find((view) => view.id === activeViewId) ?? null : null);
 
 function toggleSection(section: "fields" | "views" | "details" | "records") {
     airtableStore.toggleSection(section);
@@ -41,8 +49,8 @@ function closeRecordView() {
 
 <div class="airtable-table">
     <ViewHeader
-        title="Airtable Table"
-        icon="database"
+        title={mode === "view" ? "Airtable View" : "Airtable Table"}
+        icon={mode === "view" ? "layout-grid" : "database"}
         {lastRefresh}
         {isCached}
     />
@@ -59,7 +67,7 @@ function closeRecordView() {
                 onAction={() => airtableStore.loadTableInfo()}
             />
         {:else if tableData}
-            <TableHeader data={tableData} {loading} {isCached} />
+            <TableHeader data={tableData} {loading} {isCached} {mode} activeViewName={activeView?.name ?? null} />
 
             <FieldsList
                 fields={tableData.fields}
@@ -68,11 +76,12 @@ function closeRecordView() {
                 onToggle={() => toggleSection("fields")}
             />
 
-            <ViewsList
-                views={tableData.views}
-                expanded={expandedSections.views}
-                onToggle={() => toggleSection("views")}
-            />
+                <ViewsList
+                    views={tableData.views}
+                    currentViewId={activeViewId}
+                    expanded={expandedSections.views}
+                    onToggle={() => toggleSection("views")}
+                />
 
             {#if tableData.records && tableData.records.length > 0}
                 <RecordsList

@@ -69,6 +69,15 @@ airtable_table_id: tblXXXXXXXXXXXXXX
 ---
 ```
 
+### View note
+
+```yaml
+---
+airtable_table_id: tblXXXXXXXXXXXXXX
+airtable_view_id: viwXXXXXXXXXXXXXX
+---
+```
+
 ## Usage
 
 ### Views
@@ -76,6 +85,7 @@ airtable_table_id: tblXXXXXXXXXXXXXX
 - Open `localtable` from the ribbon or command palette
 - Open a note with `airtable_table_id` to load the connected table
 - Open a note with a record `uuid` to load that specific record
+- Open a note with `airtable_view_id` plus `airtable_table_id` to load a filtered Airtable view
 - Create notes for linked records directly from the table and record views
 
 ### Commands

@@ -1,4 +1,5 @@
 import type { App } from "obsidian";
+import type { FetchOptions } from "../../../airtable";
 import type { AirtableRecord } from "../../../airtable";
 import { CacheService, CacheKeys } from "../../../services/cacheService";
 import { LinkedRecordCache, type LinkedRecordInfo } from "./linkedRecordCache";
@@ -119,11 +120,11 @@ export class AirtableService {
 		});
 	}
 
-	async fetchRecords(tableIdOrName: string, forceRefresh: boolean = false): Promise<AirtableRecord[]> {
+	async fetchRecords(tableIdOrName: string, options: FetchOptions = {}): Promise<AirtableRecord[]> {
 		const { apiKey, baseId } = this.settings;
 		// Record caching is now entirely owned by the daemon (L1/L2 cache with
 		// stale-while-revalidate). No local CacheService layer for records.
-		const result = await cacheClient.getRecords(baseId, tableIdOrName, apiKey, { forceRefresh });
+		const result = await cacheClient.getRecords(baseId, tableIdOrName, apiKey, options);
 		return result.records;
 	}
 

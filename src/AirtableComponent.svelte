@@ -46,8 +46,8 @@ let dataType = $derived.by<DataType>(() => {
     if (!currentFile) return DataType.NONE;
     const fm = app.metadataCache.getFileCache(currentFile)?.frontmatter;
     if (fm?.uuid && String(fm.uuid).startsWith("rec")) return DataType.RECORD;
-    if (fm?.airtable_table_id)                          return DataType.TABLE;
     if (fm?.airtable_view_id)                           return DataType.VIEW;
+    if (fm?.airtable_table_id)                          return DataType.TABLE;
     return DataType.NONE;
 });
 
@@ -80,6 +80,7 @@ async function loadForFile(file: TFile | null, type: DataType, gen: number) {
     const fm = app.metadataCache.getFileCache(file)?.frontmatter;
 
 	if (type === DataType.RECORD) {
+		airtableStore.setActiveView(null);
 		const recordId = String(fm!.uuid);
 		let targetTableId: string | null = fm!.airtable_table_id ?? null;
 		if (!targetTableId) targetTableId = airtableStore.findTableForRecord(recordId);
@@ -98,11 +99,29 @@ async function loadForFile(file: TFile | null, type: DataType, gen: number) {
 		void airtableStore.resolveSelectedRecordLinks();
 
 	} else if (type === DataType.TABLE) {
+		airtableStore.setActiveView(null);
         airtableStore.closeRecordView();
         await airtableStore.loadTableInfo(false, fm!.airtable_table_id);
+        await airtableStore.fetchRecords(false);
 
     } else if (type === DataType.VIEW) {
+		const targetTableId = fm?.airtable_table_id;
+		const targetViewId = fm?.airtable_view_id;
+
+		if (!targetTableId) {
+			new Notice("Add 'airtable_table_id' to frontmatter for view notes.");
+			return;
+		}
+
+		if (!targetViewId) {
+			new Notice("Add 'airtable_view_id' to frontmatter for view notes.");
+			return;
+		}
+
+		airtableStore.setActiveView(String(targetViewId));
         airtableStore.closeRecordView();
+		await airtableStore.loadTableInfo(false, String(targetTableId));
+		await airtableStore.fetchRecords(false);
     }
 }
 
@@ -164,9 +183,9 @@ onDestroy(() => {
             {/if}
         </div>
     {:else if dataType === DataType.TABLE}
-        <TableView {storeState} />
+        <TableView {storeState} mode="table" />
     {:else if dataType === DataType.VIEW}
-        <pre>View mode is not yet implemented.</pre>
+        <TableView {storeState} mode="view" />
     {:else}
         <div class="empty-container">
             <EmptyState icon="file-question" title="No Airtable data found" description="Add `airtable_table_id` or `uuid` frontmatter" />

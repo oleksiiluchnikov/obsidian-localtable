@@ -1,19 +1,24 @@
 <script lang="ts">
 	import Icon from "../ui/Icon.svelte";
 
-	let { view }: {
+	let {
+		view,
+		isActive = false,
+	}: {
 		view: {
+			id: string;
 			name: string;
 			type: string;
 		};
+		isActive?: boolean;
 	} = $props();
 </script>
 
-<div class="view-item">
+<div class:view-item-active={isActive} class="view-item">
 	<Icon icon={view.type === "grid" ? "table" : "layout"} className="view-icon" />
 	<div class="view-info">
 		<div class="view-name">{view.name}</div>
-		<div class="view-type">{view.type}</div>
+		<div class="view-type">{view.type}{#if isActive} · Current{/if}</div>
 	</div>
 </div>
 
@@ -27,6 +32,10 @@
 
 	.view-item:last-child {
 		border-bottom: none;
+	}
+
+	.view-item-active {
+		background-color: var(--background-modifier-hover);
 	}
 
 	:global(.view-icon) {

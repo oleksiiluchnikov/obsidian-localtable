@@ -29,6 +29,7 @@ export interface AirtableState {
     tableData: TableData | null;
     loading: boolean;
     error: string;
+    activeViewId: string | null;
     expandedSections: {
         fields: boolean;
         views: boolean;
@@ -44,6 +45,7 @@ const initialState: AirtableState = {
     tableData: null,
     loading: false,
     error: "",
+    activeViewId: null,
     expandedSections: {
         fields: false,
         views: false,
@@ -109,7 +111,7 @@ const createAirtableStore = () => {
 		},
 
         // 🟢 SMART LOAD: Only fetch if we are switching tables
-        loadTableInfo: async (forceRefresh: boolean = false, specificTableId?: string) => {
+		loadTableInfo: async (forceRefresh: boolean = false, specificTableId?: string) => {
             if (!service) return;
             const currentState = get(store);
 
@@ -264,8 +266,12 @@ const createAirtableStore = () => {
 
 			try {
 				const expectedTableId = tableData.id;
+				const activeViewId = currentState.activeViewId;
 				const tableIdentifier = tableData.id || tableData.name;
-				const records = await service.fetchRecords(tableIdentifier, forceRefresh);
+				const records = await service.fetchRecords(tableIdentifier, {
+					forceRefresh,
+					view: activeViewId ?? undefined,
+				});
 
 				update(state => {
 					// M5: guard against tableData becoming null mid-flight
@@ -355,6 +361,27 @@ const createAirtableStore = () => {
                 },
             }));
         },
+
+		setActiveView: (viewId: string | null) => {
+			update((state) => {
+				if (state.activeViewId === viewId) {
+					return state;
+				}
+
+				return {
+					...state,
+					activeViewId: viewId,
+					selectedRecord: null,
+					error: "",
+					tableData: state.tableData
+						? {
+							...state.tableData,
+							records: undefined,
+						}
+						: state.tableData,
+				};
+			});
+		},
 
 		selectRecord: (record: AirtableRecord) => update((state) => ({ ...state, selectedRecord: record })),
 

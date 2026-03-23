@@ -4,13 +4,16 @@
 
 	let {
 		views,
+		currentViewId = null,
 		expanded = false,
 		onToggle,
 	}: {
 		views: Array<{
+			id: string;
 			name: string;
 			type: string;
 		}>;
+		currentViewId?: string | null;
 		expanded?: boolean;
 		onToggle: () => void;
 	} = $props();
@@ -25,7 +28,7 @@
 	>
 		<div class="view-list">
 			{#each views as view (view.name)}
-				<ViewItem {view} />
+				<ViewItem {view} isActive={view.id === currentViewId} />
 			{/each}
 		</div>
 	</CollapsibleSection>

@@ -8,10 +8,14 @@
 		data,
 		loading = false,
 		isCached = false,
+		mode = "table",
+		activeViewName = null,
 	}: {
 		data: any;
 		loading?: boolean;
 		isCached?: boolean;
+		mode?: "table" | "view";
+		activeViewName?: string | null;
 	} = $props();
 
 	let fieldsCount  = $derived(data?.fields?.length  || 0);
@@ -34,7 +38,13 @@
 	<div class="table-header-card">
 		<Icon icon="table-2" className="table-icon" />
 		<div class="table-title-container">
+			{#if mode === "view"}
+				<div class="mode-badge">View</div>
+			{/if}
 			<h2 class="table-title">{data.name}</h2>
+			{#if mode === "view" && activeViewName}
+				<div class="active-view-name">{activeViewName}</div>
+			{/if}
 			{#if data.description}
 				<div class="table-description">{data.description}</div>
 			{/if}
@@ -95,6 +105,19 @@
 		flex: 1;
 	}
 
+	.mode-badge {
+		display: inline-flex;
+		align-items: center;
+		margin-bottom: var(--size-2-1);
+		padding: 0 var(--size-2-2);
+		min-height: 22px;
+		border-radius: var(--radius-s);
+		background-color: var(--background-modifier-hover);
+		color: var(--text-muted);
+		font-size: var(--font-ui-smaller);
+		font-weight: var(--font-medium);
+	}
+
 	.table-title {
 		margin: 0;
 		font-size: var(--font-ui-large);
@@ -106,6 +129,12 @@
 		margin-top: var(--size-2-2);
 		font-size: var(--font-ui-small);
 		color: var(--text-muted);
+	}
+
+	.active-view-name {
+		margin-top: var(--size-2-1);
+		font-size: var(--font-ui-small);
+		color: var(--text-accent);
 	}
 
 	.stats-grid {
