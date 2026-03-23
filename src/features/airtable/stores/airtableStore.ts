@@ -339,6 +339,75 @@ const createAirtableStore = () => {
             }
         },
 
+		previewLinkedRecord: async (recordId: string, tableId: string) => {
+			if (!service) return;
+
+			update((state) => ({
+				...state,
+				activeViewId: null,
+				loading: true,
+				error: "",
+			}));
+
+			try {
+				const tableData = await service.loadTableInfo(false, tableId);
+				const record = await service.fetchRecord(tableId, recordId);
+
+				update((state) => ({
+					...state,
+					tableData,
+					selectedRecord: record,
+					loading: false,
+					lastRefresh: Date.now(),
+					isCached: false,
+				}));
+
+				await airtableStore.resolveSelectedRecordLinks();
+			} catch (error: unknown) {
+				update((state) => ({
+					...state,
+					loading: false,
+					error: getErrorMessage(error),
+				}));
+				new Notice(`Failed to preview linked record: ${getErrorMessage(error)}`);
+			}
+		},
+
+		openOrCreateLinkedRecordNote: async (recordId: string, tableId: string, recordName: string) => {
+			if (!_app) return;
+			const app = _app;
+
+			const existingFile = app.vault.getFiles().find((file) => {
+				const cache = app.metadataCache.getFileCache(file);
+				return cache?.frontmatter?.uuid === recordId;
+			});
+
+			if (existingFile) {
+				await app.workspace.getLeaf(false).openFile(existingFile);
+				return;
+			}
+
+			if (!service || !noteGenerator || !pluginSettings) {
+				new Notice("Linked record note generation is not initialized.");
+				return;
+			}
+
+			try {
+				const tableData = await service.loadTableInfo(false, tableId);
+				const record = await service.fetchRecord(tableId, recordId);
+
+				await noteGenerator.createNote(
+					record,
+					tableData,
+					pluginSettings.baseId,
+					pluginSettings.templatePath,
+					pluginSettings.newNoteLocation,
+				);
+			} catch (error: unknown) {
+				new Notice(`Failed to create note for ${recordName}: ${getErrorMessage(error)}`);
+			}
+		},
+
         // H2: null ALL service references to prevent dangling async continuations
         reset: () => {
             set(initialState);

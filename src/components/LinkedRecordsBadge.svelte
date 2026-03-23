@@ -29,16 +29,22 @@
 		window.open(url, "_blank");
 	}
 
+	async function handlePreviewRecord(e: MouseEvent) {
+		e.stopPropagation();
+		if (e.metaKey || e.ctrlKey) {
+			handleOpenAirtable(e);
+			return;
+		}
+
+		await airtableStore.previewLinkedRecord(record.id, record.tableId);
+	}
+
 	async function handleNoteAction(e: MouseEvent) {
 		e.stopPropagation();
 		if (fileExists) {
 			airtableStore.openNote(record.id);
 		} else {
-			await airtableStore.createNote({
-				id: record.id,
-				fields: { Name: record.name },
-				createdTime: "",
-			});
+			await airtableStore.openOrCreateLinkedRecordNote(record.id, record.tableId, record.name);
 			fileExists = true;
 		}
 	}
@@ -54,9 +60,10 @@
 >
 	<button
 		class="linked-record-badge__main"
-		onclick={handleOpenAirtable}
+		onclick={handlePreviewRecord}
 		type="button"
-		title="Open in Airtable"
+		title="Preview linked record (Cmd/Ctrl+click opens Airtable)"
+		aria-label="Preview linked record"
 	>
 		<span class="linked-record-badge__label">{record.name}</span>
 	</button>
