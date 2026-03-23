@@ -1,0 +1,22 @@
+.nav-file.airtable-linked > .nav-file-title > .nav-file-title-content {
+	font-weight: 700;
+}
+
+.airtable-linked-icon {
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	width: 14px;
+	height: 14px;
+	margin-right: 3px;
+	color: var(--color-accent, var(--interactive-accent));
+	flex-shrink: 0;
+	vertical-align: middle;
+}
+
+.airtable-linked-icon svg {
+	width: 12px;
+	height: 12px;
+	display: block;
+	overflow: visible;
+}
