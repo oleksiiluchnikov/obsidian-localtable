@@ -102,7 +102,7 @@ airtable_view_id: viwXXXXXXXXXXXXXX
 - API keys stay in Obsidian secret storage and are not stored in `data.json`
 - Secret storage is per-device and is not synced with the vault
 - Synced Airtable note links use standard `obsidian://open` URLs and do not require extra Obsidian plugins
-- If you rename or move a synced note, run `Sync link to Airtable` again to refresh the stored path
+- Renaming or moving a synced note updates the stored Airtable link automatically
 
 ## Development
 

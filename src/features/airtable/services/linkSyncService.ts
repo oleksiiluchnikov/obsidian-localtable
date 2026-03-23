@@ -127,8 +127,41 @@ export class LinkSyncService {
             return true;
 		} catch (error) {
 			throw error;
-		}
+        }
     }
+
+	async syncFile(
+		file: TFile,
+		apiKey: string,
+		baseId: string,
+		fieldName: string,
+	): Promise<boolean> {
+		const cache = this.app.metadataCache.getFileCache(file);
+		const frontmatter = cache?.frontmatter;
+
+		if (!frontmatter?.uuid || !String(frontmatter.uuid).startsWith("rec")) {
+			return false;
+		}
+
+		if (!frontmatter?.airtable_table_id) {
+			return false;
+		}
+
+		try {
+			await this.updateRecordLink(
+				String(frontmatter.uuid),
+				String(frontmatter.airtable_table_id),
+				fieldName,
+				this.generateNoteUri(file),
+				apiKey,
+				baseId,
+			);
+			return true;
+		} catch (error: unknown) {
+			new Notice(`Failed to sync renamed note: ${error instanceof Error ? error.message : "Unknown error"}`);
+			return false;
+		}
+	}
 
     /**
      * Sync current note's link to Airtable

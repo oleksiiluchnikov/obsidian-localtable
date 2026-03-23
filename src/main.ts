@@ -1,6 +1,6 @@
-import { Plugin, WorkspaceLeaf, PluginSettingTab, App, Setting, MarkdownView, debounce, SecretComponent } from "obsidian";
+import { Plugin, WorkspaceLeaf, PluginSettingTab, App, Setting, MarkdownView, debounce, SecretComponent, TFile } from "obsidian";
 import { AirtableView, VIEW_TYPE_AIRTABLE } from "./AirtableView";
-import { airtableStore } from "./features/airtable";
+import { airtableStore, LinkSyncService } from "./features/airtable";
 import { PLUGIN_NAME } from "./pluginMeta";
 // M9: static import instead of inline require()
 import { FileExplorerDecorator } from "./services/fileExplorerDecorator";
@@ -42,6 +42,8 @@ export default class ObsidianLocaltablePlugin extends Plugin {
 	private _lastActivePath: string | null = null;
 	// File explorer decorator for highlighting linked notes
 	private _decorator: FileExplorerDecorator | null = null;
+	private _linkSyncService: LinkSyncService | null = null;
+	private _pendingRenameSyncs = new Map<string, number>();
 
 	/**
 	 * Resolves the actual Airtable API key from SecretStorage using the
@@ -89,6 +91,7 @@ export default class ObsidianLocaltablePlugin extends Plugin {
 
 		// File explorer decorator — highlight Airtable-linked notes
 		this._decorator = new FileExplorerDecorator(this.app);
+		this._linkSyncService = new LinkSyncService(this.app);
 
 		this.app.workspace.onLayoutReady(() => {
 			this.handleFileChange();
@@ -100,7 +103,12 @@ export default class ObsidianLocaltablePlugin extends Plugin {
 		// Refresh decorator when files are created, deleted, or renamed
 		this.registerEvent(this.app.vault.on("create", () => this._decorator?.refresh()));
 		this.registerEvent(this.app.vault.on("delete", () => this._decorator?.refresh()));
-		this.registerEvent(this.app.vault.on("rename", () => this._decorator?.refresh()));
+		this.registerEvent(this.app.vault.on("rename", (file) => {
+			this._decorator?.refresh();
+			if (file instanceof TFile) {
+				this.scheduleRenameSync(file);
+			}
+		}));
 
 		// Refresh when frontmatter changes on any file (covers uuid being added/removed)
 		this.registerEvent(
@@ -152,8 +160,49 @@ export default class ObsidianLocaltablePlugin extends Plugin {
 	}
 
 	async onunload() {
+		for (const timeoutId of this._pendingRenameSyncs.values()) {
+			window.clearTimeout(timeoutId);
+		}
+		this._pendingRenameSyncs.clear();
+		this._linkSyncService = null;
 		this._decorator?.destroy();
 		this.app.workspace.detachLeavesOfType(VIEW_TYPE_AIRTABLE);
+	}
+
+	private scheduleRenameSync(file: TFile): void {
+		if (file.extension !== "md") return;
+
+		const existingTimeout = this._pendingRenameSyncs.get(file.path);
+		if (existingTimeout !== undefined) {
+			window.clearTimeout(existingTimeout);
+		}
+
+		const timeoutId = window.setTimeout(() => {
+			this._pendingRenameSyncs.delete(file.path);
+			void this.syncRenamedFile(file);
+		}, 600);
+
+		this._pendingRenameSyncs.set(file.path, timeoutId);
+	}
+
+	private async syncRenamedFile(file: TFile): Promise<void> {
+		if (!this._linkSyncService) return;
+
+		const cache = this.app.metadataCache.getFileCache(file);
+		const frontmatter = cache?.frontmatter;
+		if (!frontmatter?.uuid || !String(frontmatter.uuid).startsWith("rec")) return;
+		if (!frontmatter?.airtable_table_id) return;
+		if (!this.settings.baseId || !this.settings.obsidianLinkFieldName) return;
+
+		const apiKey = await this.getApiKey();
+		if (!apiKey) return;
+
+		await this._linkSyncService.syncFile(
+			file,
+			apiKey,
+			this.settings.baseId,
+			this.settings.obsidianLinkFieldName,
+		);
 	}
 
 	/** Debounced active-leaf-change handler — collapses the Obsidian double-fire. */
